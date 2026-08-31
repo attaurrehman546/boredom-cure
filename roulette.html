@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <title>Mood Roulette</title>
+
+  <style>
+    :root {
+      --ink: #211f31;
+      --cream: #fff9ed;
+      --pink: #ff5b84;
+      --purple: #845ef7;
+      --yellow: #ffd43b;
+      --blue: #4dabf7;
+      --mint: #63e6be;
+      --orange: #ff922b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--cream);
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at 12% 13%, var(--yellow) 0 5%, transparent 5.2%),
+        radial-gradient(circle at 88% 18%, var(--mint) 0 4%, transparent 4.2%),
+        radial-gradient(circle at 11% 86%, var(--blue) 0 6%, transparent 6.2%),
+        var(--cream);
+    }
+
+    button {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: min(100%, 920px);
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding:
+        max(32px, env(safe-area-inset-top))
+        clamp(16px, 4vw, 32px)
+        max(36px, env(safe-area-inset-bottom));
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--purple);
+      font-family: monospace;
+      font-size: clamp(0.68rem, 2vw, 0.8rem);
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(3.1rem, 10vw, 6.5rem);
+      line-height: 0.82;
+      letter-spacing: -0.08em;
+    }
+
+    h1 span {
+      color: var(--pink);
+      text-shadow: 4px 4px 0 var(--yellow);
+    }
+
+    .subtitle {
+      max-width: 34rem;
+      margin: 24px 0 22px;
+      color: #625e78;
+      font-size: clamp(1rem, 2.8vw, 1.15rem);
+      line-height: 1.45;
+    }
+
+    .categories {
+      width: min(100%, 760px);
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .category {
+      min-height: 50px;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      padding: 8px 9px;
+      color: var(--ink);
+      background: #ffffff;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-size: clamp(0.76rem, 1.7vw, 0.96rem);
+      font-weight: 700;
+      line-height: 1.1;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .category:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+
+    .category:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+
+    .category.active {
+      color: #ffffff;
+      background: var(--purple);
+    }
+
+    .category[data-category="normal"].active {
+      background: var(--blue);
+    }
+
+    .category[data-category="devious"].active {
+      background: var(--orange);
+    }
+
+    .category[data-category="villainary"].active {
+      background: var(--pink);
+    }
+
+    .category[data-category="new"].active {
+      background: #22a76d;
+    }
+
+    .category[data-category="creative"].active {
+      background: var(--purple);
+    }
+
+    .category[data-category="social"].active {
+      background: #d64a73;
+    }
+
+    .roulette-area {
+      position: relative;
+      width: min(82vw, 470px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      margin: 4px 0 31px;
+    }
+
+    .pointer {
+      position: absolute;
+      z-index: 4;
+      top: -24px;
+      color: var(--ink);
+      font-size: clamp(2.7rem, 8vw, 3.8rem);
+      line-height: 1;
+      filter: drop-shadow(0 4px 0 var(--cream));
+    }
+
+    .wheel {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      border: clamp(7px, 2vw, 10px) solid var(--ink);
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--pink) 0deg 45deg,
+        var(--yellow) 45deg 90deg,
+        var(--blue) 90deg 135deg,
+        var(--mint) 135deg 180deg,
+        var(--purple) 180deg 225deg,
+        var(--orange) 225deg 270deg,
+        #f783ac 270deg 315deg,
+        #74c0fc 315deg 360deg
+      );
+      box-shadow: 0 11px 0 var(--ink), 0 18px 30px rgba(33, 31, 49, 0.2);
+      transition: transform 4.8s cubic-bezier(0.12, 0.7, 0.15, 1);
+    }
+
+    .wheel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        linear-gradient(45deg, transparent 49.4%, rgba(33, 31, 49, 0.25) 50%, transparent 50.6%),
+        linear-gradient(-45deg, transparent 49.4%, rgba(33, 31, 49, 0.25) 50%, transparent 50.6%),
+        linear-gradient(0deg, transparent 49.4%, rgba(33, 31, 49, 0.25) 50%, transparent 50.6%),
+        linear-gradient(90deg, transparent 49.4%, rgba(33, 31, 49, 0.25) 50%, transparent 50.6%);
+    }
+
+    .wheel-center {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      top: 50%;
+      width: clamp(96px, 27vw, 132px);
+      height: clamp(96px, 27vw, 132px);
+      transform: translate(-50%, -50%);
+      display: grid;
+      place-content: center;
+      gap: 5px;
+      border: clamp(6px, 1.8vw, 8px) solid var(--ink);
+      border-radius: 50%;
+      color: var(--cream);
+      background: var(--ink);
+    }
+
+    .wheel-center span {
+      font-family: monospace;
+      font-size: clamp(0.54rem, 1.8vw, 0.68rem);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .wheel-center strong {
+      font-size: clamp(1rem, 4vw, 1.35rem);
+      letter-spacing: 1px;
+    }
+
+    #spin-button {
+      width: min(100%, 310px);
+      min-height: 58px;
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 22px;
+      color: var(--cream);
+      background: var(--ink);
+      box-shadow: 0 6px 0 #08070e;
+      font-size: clamp(1rem, 3vw, 1.15rem);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #spin-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 #08070e;
+    }
+
+    #spin-button:active {
+      transform: translateY(5px);
+      box-shadow: 0 1px 0 #08070e;
+    }
+
+    #spin-button:disabled,
+    .category:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .result-card {
+      width: min(100%, 640px);
+      min-height: 132px;
+      margin-top: 34px;
+      padding: 22px clamp(18px, 5vw, 30px);
+      border: 3px solid var(--ink);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 6px 6px 0 var(--ink);
+      display: grid;
+      place-content: center;
+    }
+
+    .result-card p {
+      margin: 0 0 9px;
+      color: var(--purple);
+      font-family: monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+
+    .result-card h2 {
+      margin: 0;
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      line-height: 1.25;
+    }
+
+    .result-card.show {
+      animation: pop 0.45s ease;
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(0.84) rotate(-2deg);
+      }
+
+      65% {
+        transform: scale(1.05) rotate(1deg);
+      }
+
+      100% {
+        transform: scale(1) rotate(0);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .categories {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 430px) {
+      .app {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .categories {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+      }
+
+      .category {
+        min-height: 48px;
+      }
+
+      .roulette-area {
+        width: min(88vw, 390px);
+      }
+
+      .result-card {
+        margin-top: 29px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <p class="eyebrow">ANTI-BOREDOM DEPARTMENT</p>
+
+    <h1>Mood<br /><span>Roulette</span></h1>
+
+    <p class="subtitle">Choose your mood. Spin for your mission.</p>
+
+    <nav class="categories" aria-label="Challenge categories">
+      <button class="category active" data-category="normal">Normal</button>
+      <button class="category" data-category="devious">Devious</button>
+      <button class="category" data-category="villainary">Villainary</button>
+      <button class="category" data-category="new">New</button>
+      <button class="category" data-category="creative">Creative</button>
+      <button class="category" data-category="social">Social</button>
+    </nav>
+
+    <section class="roulette-area" aria-label="Challenge wheel">
+      <div class="pointer" aria-hidden="true">▼</div>
+
+      <div id="wheel" class="wheel">
+        <div class="wheel-center">
+          <span id="selected-category">NORMAL</span>
+          <strong>SPIN</strong>
+        </div>
+      </div>
+    </section>
+
+    <button id="spin-button">SPIN THE WHEEL</button>
+
+    <section id="result-card" class="result-card">
+      <p>YOUR MISSION</p>
+      <h2 id="challenge-text" aria-live="polite">
+        Pick a category, then spin the wheel.
+      </h2>
+    </section>
+  </main>
+
+  <script>
+    function buildChallengeSet(starters, actions) {
+      const challenges = [];
+
+      starters.forEach((starter) => {
+        actions.forEach((action) => {
+          challenges.push(`${starter} ${action}`);
+        });
+      });
+
+      return challenges;
+    }
+
+    const normalChallenges = buildChallengeSet(
+      [
+        "Take a moment to",
+        "Challenge yourself to",
+        "Before you scroll again,",
+        "For the next ten minutes,",
+        "Keep it simple:",
+        "Give yourself permission to"
+      ],
+      [
+        "make a five-song playlist for your current mood.",
+        "clean one small surface near you.",
+        "make a snack using what is already in the kitchen.",
+        "take a short walk or stretch.",
+        "organize ten photos or screenshots on your phone.",
+        "watch one short video about something unfamiliar.",
+        "write down three things you want to do this month.",
+        "listen to an album you have never heard before.",
+        "learn five words in a new language.",
+        "finish one small task you have been avoiding."
+      ]
+    );
+
+    const deviousChallenges = buildChallengeSet(
+      [
+        "For a harmless bit of chaos,",
+        "Secret mission:",
+        "With maximum confidence,",
+        "For the next ten minutes,",
+        "Make today slightly stranger:",
+        "Without confusing anyone too much,"
+      ],
+      [
+        "give yourself a code name for the day.",
+        "text a friend an out-of-context photo of a potato.",
+        "call your room 'the headquarters.'",
+        "give a random object a dramatic backstory.",
+        "write 'classified' on a note and leave it near your desk.",
+        "refer to your phone charger as 'the life support system.'",
+        "make a fake award certificate for yourself.",
+        "say 'the plan is working' after completing a tiny task.",
+        "give your snack an extremely fancy menu description.",
+        "make a playlist called 'Evidence.'"
+      ]
+    );
+
+    const villainaryChallenges = buildChallengeSet(
+      [
+        "As the final boss,",
+        "In full dramatic mode,",
+        "From your secret lair,",
+        "For your villain origin story,",
+        "With unnecessary confidence,",
+        "As commander of the operation,"
+      ],
+      [
+        "give yourself a villain name based on the nearest object.",
+        "make a dramatic speech about why you deserve the last cookie.",
+        "create an evil laugh with three distinct stages.",
+        "name your room 'The Lair' for the day.",
+        "write a three-step plan to defeat boredom.",
+        "design a logo for your fictional evil corporation.",
+        "create a signature villain pose in the mirror.",
+        "rename your to-do list 'The Master Plan.'",
+        "write a fake warning label for your bedroom door.",
+        "choose an arch-nemesis: laundry, homework, or an empty fridge."
+      ]
+    );
+
+    const newChallenges = buildChallengeSet(
+      [
+        "Try something different:",
+        "Today is for learning, so",
+        "For a small new experience,",
+        "Give curiosity a chance and",
+        "Make this moment unfamiliar:",
+        "Your mission is to"
+      ],
+      [
+        "learn how to say hello in five different languages.",
+        "watch a video about a job you did not know existed.",
+        "look up a random country and learn three facts about it.",
+        "learn one simple card trick.",
+        "try a new food, drink, or recipe.",
+        "learn one basic sign-language phrase.",
+        "watch a documentary clip about space, animals, or the ocean.",
+        "find a random museum online and explore one exhibit.",
+        "learn how to fold one piece of origami.",
+        "find a new hobby and watch a five-minute introduction to it."
+      ]
+    );
+
+    const creativeChallenges = buildChallengeSet(
+      [
+        "Make something for no reason:",
+        "Creative mode activated:",
+        "Grab an idea and",
+        "Your artistic mission is to",
+        "Make it weird and",
+        "For the next few minutes,"
+      ],
+      [
+        "draw a tiny comic with a beginning, middle, and end.",
+        "write a six-word story.",
+        "design an album cover for an imaginary band.",
+        "draw your dream room in under five minutes.",
+        "invent a superhero with a completely useless power.",
+        "write a fake movie title and its plot summary.",
+        "draw an animal wearing an outfit.",
+        "create a logo for a made-up company.",
+        "make a color palette from five things near you.",
+        "write a story where the main character is a sock."
+      ]
+    );
+
+    const socialChallenges = buildChallengeSet(
+      [
+        "Make someone's day a little better:",
+        "Reach out and",
+        "Your social mission is to",
+        "For a friendly moment,",
+        "Share some good energy and",
+        "Try this with someone you know:"
+      ],
+      [
+        "send someone a message telling them one thing you appreciate about them.",
+        "ask a friend what song they have been listening to lately.",
+        "share a funny meme that reminded you of someone.",
+        "ask a family member about a memory from when they were younger.",
+        "give someone a genuine compliment.",
+        "ask a friend what they are currently excited about.",
+        "send someone a simple 'thinking of you' message.",
+        "ask someone for one song to add to your playlist.",
+        "tell someone you are proud of them for something.",
+        "ask a friend what their perfect weekend looks like."
+      ]
+    );
+
+    const challengeSets = {
+      normal: normalChallenges,
+      devious: deviousChallenges,
+      villainary: villainaryChallenges,
+      new: newChallenges,
+      creative: creativeChallenges,
+      social: socialChallenges
+    };
+
+    const wheel = document.getElementById("wheel");
+    const spinButton = document.getElementById("spin-button");
+    const challengeText = document.getElementById("challenge-text");
+    const resultCard = document.getElementById("result-card");
+    const selectedCategoryText = document.getElementById("selected-category");
+    const categoryButtons = document.querySelectorAll(".category");
+
+    let selectedCategory = "normal";
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    function setCategory(button) {
+      if (isSpinning) {
+        return;
+      }
+
+      selectedCategory = button.dataset.category;
+
+      categoryButtons.forEach((categoryButton) => {
+        categoryButton.classList.remove("active");
+      });
+
+      button.classList.add("active");
+      selectedCategoryText.textContent = button.textContent.toUpperCase();
+      challengeText.textContent = `${button.textContent} mode selected. Spin the wheel.`;
+    }
+
+    function setControlsDisabled(disabled) {
+      spinButton.disabled = disabled;
+
+      categoryButtons.forEach((button) => {
+        button.disabled = disabled;
+      });
+    }
+
+    function spinWheel() {
+      if (isSpinning) {
+        return;
+      }
+
+      isSpinning = true;
+      setControlsDisabled(true);
+      spinButton.textContent = "CHOOSING YOUR FATE...";
+
+      const challenges = challengeSets[selectedCategory];
+      const randomIndex = Math.floor(Math.random() * challenges.length);
+      const selectedChallenge = challenges[randomIndex];
+
+      const extraSpins = 5 * 360;
+      const randomAngle = Math.floor(Math.random() * 360);
+
+      currentRotation += extraSpins + randomAngle;
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+      setTimeout(() => {
+        challengeText.textContent = selectedChallenge;
+
+        resultCard.classList.remove("show");
+        void resultCard.offsetWidth;
+        resultCard.classList.add("show");
+
+        spinButton.textContent = "SPIN AGAIN";
+        setControlsDisabled(false);
+        isSpinning = false;
+      }, 4800);
+    }
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setCategory(button);
+      });
+    });
+
+    spinButton.addEventListener("click", spinWheel);
+  </script>
+</body>
+</html>
